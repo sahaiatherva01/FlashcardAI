@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Flashcard Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">✦</span> AI Flashcard Generator</div>
+  <button id="theme-toggle" class="btn btn-ghost">◐ Dark Mode</button>
+</header>
+
+<nav class="main-nav">
+  <button class="nav-btn active" data-page="generate-page">📁 Generate</button>
+  <button class="nav-btn" data-page="flashcards-page">▤ Flashcards</button>
+  <button class="nav-btn" data-page="study-page">↻ Study Mode</button>
+  <button class="nav-btn" data-page="quiz-page">◈ Quiz Mode</button>
+  <button class="nav-btn" data-page="history-page">🕐 History</button>
+</nav>
+
+<main class="container">
+
+  <!-- ================= GENERATE PAGE ================= -->
+  <section id="generate-page" class="page active">
+    <div class="card">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="file-tab">📁 Upload Files</button>
+        <button class="tab-btn" data-tab="paste-tab">✍️ Paste Text</button>
+      </div>
+
+      <form id="file-tab" class="tab-panel">
+        <div class="form-group">
+          <label class="label">Files — up to 10 (PDF, DOCX, TXT, PPTX, or Image)</label>
+          <div id="dropzone" class="dropzone">
+            <input type="file" id="file-input" accept=".pdf,.docx,.txt,.pptx,.png,.jpg,.jpeg,.webp" hidden multiple>
+            <p id="dropzone-text">Drag & drop up to 10 files here, or click to browse</p>
+          </div>
+          <ul id="file-list" class="file-list"></ul>
+        </div>
+        <div class="form-group">
+          <label class="label">Subject (optional)</label>
+          <input class="input" id="subject-file" placeholder="e.g. Organic Chemistry">
+        </div>
+        <div class="form-group">
+          <label class="label">If multiple files are uploaded</label>
+          <div class="radio-row">
+            <label><input type="radio" name="upload-mode" value="combined" checked> Merge into one deck (removes duplicate paragraphs)</label>
+            <label><input type="radio" name="upload-mode" value="separate"> Generate a separate deck per file</label>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="file-submit-btn">Generate Flashcards</button>
+        <div id="upload-progress" class="upload-progress" style="display:none;">
+          <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-bar-fill"></div></div>
+          <p id="progress-label">Processing files…</p>
+        </div>
+        <div id="upload-results" class="upload-results"></div>
+      </form>
+
+      <form id="paste-tab" class="tab-panel" style="display:none;">
+        <div class="form-group">
+          <label class="label">Paste your notes</label>
+          <textarea class="input" id="pasted-text" rows="8" placeholder="Paste lecture notes, textbook excerpts, etc."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="label">Subject (optional)</label>
+          <input class="input" id="subject-paste" placeholder="e.g. World History">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="paste-submit-btn">Generate Flashcards</button>
+      </form>
+
+      <p id="status-message"></p>
+    </div>
+  </section>
+
+  <!-- ================= FLASHCARDS PAGE ================= -->
+  <section id="flashcards-page" class="page">
+    <div class="page-header">
+      <h2 id="card-count">My Flashcards</h2>
+      <div class="export-btns">
+        <a href="/api/export/csv" class="btn btn-secondary btn-sm">Export CSV</a>
+        <a href="/api/export/json" class="btn btn-secondary btn-sm">Export JSON</a>
+        <a href="/api/export/pdf" class="btn btn-secondary btn-sm">Export PDF</a>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <input class="input" id="search-input" placeholder="Search cards...">
+      <select class="input" id="subject-filter"><option value="">All Subjects</option></select>
+      <select class="input" id="type-filter">
+        <option value="">All Types</option>
+        <option value="definition">Definition</option>
+        <option value="qa">Q&A</option>
+        <option value="fill_blank">Fill in the Blank</option>
+        <option value="mcq">Multiple Choice</option>
+        <option value="formula">Formula</option>
+        <option value="true_false">True/False</option>
+      </select>
+      <select class="input" id="difficulty-filter">
+        <option value="">All Difficulties</option>
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+      <label class="checkbox-label"><input type="checkbox" id="favorite-filter"> ⭐ Favorites only</label>
+    </div>
+
+    <div id="card-grid" class="card-grid"></div>
+    <p id="empty-state" class="empty-state" style="display:none;">No flashcards yet — generate some in the Generate tab!</p>
+  </section>
+
+  <!-- ================= STUDY MODE PAGE ================= -->
+  <section id="study-page" class="page">
+    <div class="page-header">
+      <h2>Study Mode</h2>
+      <select class="input" id="study-subject-filter" style="max-width:220px;"><option value="">All Subjects</option></select>
+    </div>
+    <div id="study-empty" class="empty-state" style="display:none;">No flashcards to study yet.</div>
+    <div id="study-stage" class="study-stage">
+      <p id="study-progress-label" class="study-progress-label"></p>
+      <div class="flip-card study-flip-card" id="study-flip-card">
+        <div class="flip-card-inner">
+          <div class="flip-card-front" onclick="this.closest('.flip-card').classList.toggle('flipped')">
+            <div class="flip-card-body" id="study-question"></div>
+            <p class="flip-card-hint">Click to reveal answer</p>
+          </div>
+          <div class="flip-card-back" onclick="this.closest('.flip-card').classList.toggle('flipped')">
+            <div class="flip-card-body" id="study-answer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="study-controls">
+        <button class="btn btn-secondary" id="study-prev">← Previous</button>
+        <button class="btn btn-secondary" id="study-shuffle">🔀 Shuffle</button>
+        <button class="btn btn-primary" id="study-next">Next →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= QUIZ MODE PAGE ================= -->
+  <section id="quiz-page" class="page">
+    <div class="page-header"><h2>Quiz Mode</h2></div>
+    <div id="quiz-setup" class="card quiz-container">
+      <div class="form-group">
+        <label class="label">Subject</label>
+        <select class="input" id="quiz-subject-filter"><option value="">All Subjects (mixed)</option></select>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:18px;">
+        Quiz questions are pulled from your Multiple Choice, True/False, and Fill-in-the-Blank cards.
+      </p>
+      <button class="btn btn-primary btn-block" id="start-quiz-btn">Start Quiz</button>
+    </div>
+    <div id="quiz-app" class="quiz-container"></div>
+  </section>
+
+  <!-- ================= HISTORY PAGE ================= -->
+  <section id="history-page" class="page">
+    <div class="page-header"><h2>Upload History</h2></div>
+    <div id="history-list"></div>
+    <p id="history-empty" class="empty-state" style="display:none;">No uploads yet.</p>
+  </section>
+
+</main>
+
+<!-- ---------- Edit Modal ---------- -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box card">
+    <div class="modal-header">
+      <h3>Edit Flashcard</h3>
+      <button class="modal-close" id="modal-close-btn">&times;</button>
+    </div>
+    <form id="edit-form">
+      <input type="hidden" id="edit-id">
+      <div class="form-group"><label class="label">Term</label><input class="input" id="edit-term"></div>
+      <div class="form-group"><label class="label">Question</label><textarea class="input" id="edit-question" rows="2"></textarea></div>
+      <div class="form-group"><label class="label">Answer</label><textarea class="input" id="edit-answer" rows="2" required></textarea></div>
+      <div class="form-group"><label class="label">Explanation</label><textarea class="input" id="edit-explanation" rows="2"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="label">Topic</label><input class="input" id="edit-topic"></div>
+        <div class="form-group">
+          <label class="label">Difficulty</label>
+          <select class="input" id="edit-difficulty">
+            <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Save Changes</button>
+    </form>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

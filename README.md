@@ -1,4 +1,4 @@
-# 🧠 AI Flashcard Generator
+#  AI Flashcard Generator
 
 A full-stack web app that converts study material (PDF, DOCX, TXT, PPTX,
 images, or pasted text) into flashcards using the Gemini API — with search,
@@ -6,7 +6,7 @@ filtering, favorites, Study Mode, Quiz Mode, upload history, and CSV/JSON/PDF
 export. Built with **Flask + vanilla JS + SQLite** — no frontend framework,
 no build step, no Docker.
 
-> ⚠️ **If you're setting this up from an older clone**: an earlier version of
+>  **If you're setting this up from an older clone**: an earlier version of
 > this repo accidentally committed a real Gemini API key inside
 > `backend/.env.example`. If you ever used that key, **revoke it immediately**
 > at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
@@ -27,8 +27,6 @@ flashcard-ai/
 │   └── script.js
 ├── tests/
 │   └── test_app.py        # pytest smoke tests (run without any API key)
-├── Procfile                # gunicorn entrypoint for deployment
-├── LICENSE
 └── README.md
 ```
 
